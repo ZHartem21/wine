@@ -30,12 +30,6 @@ def get_sorted_dict(input_dict):
 products_sorted = get_sorted_dict(products)
 
 
-for n in products_sorted:
-    print(n)
-    for a in products_sorted[n]:
-        print(a)
-
-
 def get_year_form(year):
     last_two_chars = str(year)[-2:]
     if int(last_two_chars) > 4 and int(last_two_chars) < 21:

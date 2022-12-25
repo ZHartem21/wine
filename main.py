@@ -1,4 +1,68 @@
+import collections
+import pprint
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+
+import pandas
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+excel_wine_data = pandas.read_excel(
+        'wine3.xlsx', na_values=['Nan', 'nan'], keep_default_na=False
+)
+products = excel_wine_data.to_dict(orient='records')
+pp = pprint.PrettyPrinter(indent=4)
+
+
+def get_sorted_dict(input_dict):
+    wine_defaultdict = collections.defaultdict(list)
+    for wine in input_dict:
+        wine_defaultdict[wine['Категория']].append(
+            {
+                'Название': wine['Название'],
+                'Сорт': wine['Сорт'],
+                'Цена': wine['Цена'],
+                'Картинка': wine['Картинка'],
+                'Акция': wine['Акция']
+            }
+        )
+    return wine_defaultdict
+
+
+products_sorted = get_sorted_dict(products)
+
+
+for n in products_sorted:
+    print(n)
+    for a in products_sorted[n]:
+        print(a)
+
+
+def get_year_form(year):
+    last_two_chars = str(year)[-2:]
+    if int(last_two_chars) > 4 and int(last_two_chars) < 21:
+        return 'лет'
+    last_char = str(year)[-1:]
+    if int(last_char) == 1:
+        return 'год'
+    if int(last_char) in (2, 3, 4):
+        return 'года'
+    return 'лет'
+
+
+env = Environment(
+    loader=FileSystemLoader('.'),
+    autoescape=select_autoescape(['html', 'xml'])
+)
+
+template = env.get_template('template.html')
+
+rendered_page = template.render(
+    products=products_sorted,
+    winery_age=102,
+    year_form=get_year_form(102)
+)
+
+with open('index.html', 'w', encoding="utf8") as file:
+    file.write(rendered_page)
 
 
 server = HTTPServer(('0.0.0.0', 8000), SimpleHTTPRequestHandler)

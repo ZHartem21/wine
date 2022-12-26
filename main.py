@@ -1,21 +1,17 @@
+import argparse
 import collections
-import pprint
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 import pandas
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-excel_wine_data = pandas.read_excel(
-        'wine3.xlsx', na_values=['Nan', 'nan'], keep_default_na=False
-)
-products = excel_wine_data.to_dict(orient='records')
-pp = pprint.PrettyPrinter(indent=4)
+WINERY_AGE = 102
 
 
-def get_sorted_dict(input_dict):
-    wine_defaultdict = collections.defaultdict(list)
-    for wine in input_dict:
-        wine_defaultdict[wine['Категория']].append(
+def get_sorted_wines(wines):
+    sorted_wines = collections.defaultdict(list)
+    for wine in wines:
+        sorted_wines[wine['Категория']].append(
             {
                 'Название': wine['Название'],
                 'Сорт': wine['Сорт'],
@@ -24,10 +20,7 @@ def get_sorted_dict(input_dict):
                 'Акция': wine['Акция']
             }
         )
-    return wine_defaultdict
-
-
-products_sorted = get_sorted_dict(products)
+    return sorted_wines
 
 
 def get_year_form(year):
@@ -42,22 +35,35 @@ def get_year_form(year):
     return 'лет'
 
 
-env = Environment(
-    loader=FileSystemLoader('.'),
-    autoescape=select_autoescape(['html', 'xml'])
-)
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--file', default='wine.xlsx', required=False)
+    args = parser.parse_args()
+    wines_table = pandas.read_excel(
+            args.file, na_values=['Nan', 'nan'], keep_default_na=False
+    )
+    products = wines_table.to_dict(orient='records')
+    sorted_products = get_sorted_wines(products)
 
-template = env.get_template('template.html')
+    env = Environment(
+        loader=FileSystemLoader('.'),
+        autoescape=select_autoescape(['html', 'xml'])
+    )
 
-rendered_page = template.render(
-    products=products_sorted,
-    winery_age=102,
-    year_form=get_year_form(102)
-)
+    template = env.get_template('template.html')
 
-with open('index.html', 'w', encoding="utf8") as file:
-    file.write(rendered_page)
+    rendered_page = template.render(
+        products=sorted_products,
+        winery_age=WINERY_AGE,
+        year_form=get_year_form(WINERY_AGE)
+    )
+
+    with open('index.html', 'w', encoding="utf8") as file:
+        file.write(rendered_page)
+
+    server = HTTPServer(('0.0.0.0', 8000), SimpleHTTPRequestHandler)
+    server.serve_forever()
 
 
-server = HTTPServer(('0.0.0.0', 8000), SimpleHTTPRequestHandler)
-server.serve_forever()
+if __name__ == '__main__':
+    main()

@@ -1,11 +1,12 @@
 import argparse
 import collections
+import datetime
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 import pandas
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-WINERY_AGE = 102
+WINERY_FOUNDED = 1920
 
 
 def get_sorted_wines(wines):
@@ -36,6 +37,7 @@ def get_year_form(year):
 
 
 def main():
+    winery_age = datetime.datetime.now().year - WINERY_FOUNDED
     parser = argparse.ArgumentParser()
     parser.add_argument('--file', default='wine.xlsx', required=False)
     args = parser.parse_args()
@@ -54,8 +56,8 @@ def main():
 
     rendered_page = template.render(
         products=sorted_products,
-        winery_age=WINERY_AGE,
-        year_form=get_year_form(WINERY_AGE)
+        winery_age=winery_age,
+        year_form=get_year_form(winery_age)
     )
 
     with open('index.html', 'w', encoding="utf8") as file:
